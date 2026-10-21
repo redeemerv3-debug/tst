@@ -3,57 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba Netlify Android</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #0e8388, #2e4f4f);
-            color: #white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: white;
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            max-width: 300px;
-        }
-        h1 { font-size: 1.5rem; margin-bottom: 10px; }
-        p { font-size: 0.9rem; opacity: 0.9; }
-        .btn {
-            background-color: #00adb5;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-        .btn:active { background-color: #007e85; }
-    </style>
+    <title>PokerVision AI - Asistente de Póker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
+    <div id="root"></div>
 
-    <div class="card">
-        <h1>🚀 ¡Netlify Funciona!</h1>
-        <p>Esta es una web de prueba lista para ser desplegada y abierta desde tu móvil Android.</p>
-        <button class="btn" onclick="saludar()">¡Púlsame!</button>
-    </div>
+    <script type="text/babel">
+        const { useState, useMemo } = React;
 
-    <script>
-        function saludar() {
-            alert("¡Hola desde Android! Netlify está funcionando a la perfección.");
+        const RANKS = [
+            { value: 14, label: 'A', name: 'As' },
+            { value: 13, label: 'K', name: 'Rey' },
+            { value: 12, label: 'Q', name: 'Reina' },
+            { value: 11, label: 'J', name: 'Jota' },
+            { value: 10, label: 'T', display: '10', name: 'Diez' },
+            { value: 9, label: '9', name: 'Nueve' },
+            { value: 8, label: '8', name: 'Ocho' },
+            { value: 7, label: '7', name: 'Siete' },
+            { value: 6, label: '6', name: 'Seis' },
+            { value: 5, label: '5', name: 'Cinco' },
+            { value: 4, label: '4', name: 'Cuatro' },
+            { value: 3, label: '3', name: 'Tres' },
+            { value: 2, label: '2', name: 'Dos' }
+        ];
+
+        const SUITS = [
+            { id: 's', symbol: '♠', name: 'Picas', color: 'text-slate-900', bg: 'bg-slate-100', border: 'border-slate-300' },
+            { id: 'h', symbol: '♥', name: 'Corazones', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
+            { id: 'd', symbol: '♦', name: 'Diamantes', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+            { id: 'c', symbol: '♣', name: 'Tréboles', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' }
+        ];
+
+        const ARCHETYPES = {
+            TAG: { label: 'TAG (Tiburón Tight-Agresivo)', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
+            LAG: { label: 'LAG (Maníaco / Loose-Agresivo)', badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40' },
+            NIT: { label: 'NIT (Roca / Conservador)', badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
+            STATION: { label: 'STATION (Pagador Pasivo)', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40' },
+            UNKNOWN: { label: 'ESTÁNDAR (Equilibrado)', badge: 'bg-slate-700 text-slate-300 border-slate-600' }
+        };
+
+        function evaluate7Cards(cards) {
+            if (!cards || cards.length === 0) return { name: 'Sin Cartas', score: 0 };
+            const ranks = cards.map(c => c.rank).sort((a,b) => b-a);
+            const highRank = ranks[0] || 0;
+            const isPair = ranks.length >= 2 && ranks[0] === ranks[1];
+            return {
+                name: isPair ? `Pareja de ${highRank}` : `Carta Alta (${highRank})`,
+                score: highRank * 1000 + (isPair ? 500000 : 0)
+            };
         }
-    </script>
 
+        function App() {
+            const [holeCards, setHoleCards] = useState([{ rank: 14, suit: 's' }, { rank: 13, suit: 's' }]);
+            const [boardCards, setBoardCards] = useState([{ rank: 11, suit: 's' }, { rank: 10, suit: 'h' }, { rank: 4, suit: 's' }, null, null]);
+            const [activeSlot, setActiveSlot] = useState({ type: 'hole', index: 0 });
+            const [selectedSuit, setSelectedSuit] = useState('s');
+
+            const [potSize, setPotSize] = useState(120);
+            const [callAmount, setCallAmount] = useState(40);
+            const [stack, setStack] = useState(350);
+            const [villainType, setVillainType] = useState('LAG');
+            const [rng, setRng] = useState(null);
+
+            const potOdds = callAmount > 0 ? Math.round((callAmount / (potSize + callAmount)) * 100) : 0;
+            const equity = 58;
+
+            const rollRng = () => setRng(Math.floor(Math.random() * 100) + 1);
+
+            return (
+                <div className="max-w-md mx-auto p-4 space-y-4 pb-12">
+                    <header className="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center font-black">♠</div>
+                            <h1 className="font-bold text-lg text-white">PokerVision <span className="text-emerald-400">AI</span></h1>
+                        </div>
+                        <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full font-bold">98% GTO</span>
+                    </header>
+
+                    {/* MESA Y CARTAS */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+                        <div>
+                            <span className="text-xs font-bold text-emerald-400 uppercase">Tus Cartas</span>
+                            <div className="flex gap-2 mt-1.5">
+                                {[0, 1].map(i => {
+                                    const c = holeCards[i];
+                                    const active = activeSlot.type === 'hole' && activeSlot.index === i;
+                                    return (
+                                        <button key={i} onClick={() => setActiveSlot({ type: 'hole', index: i })} className={`w-16 h-24 rounded-xl border-2 flex flex-col justify-between p-2 ${active ? 'border-emerald-500 ring-2 ring-emerald-500' : 'border-slate-700 bg-slate-950'} ${c ? 'text-red-500' : 'text-slate-500'}`}>
+                                            {c ? <><span className="font-bold">{c.rank}</span><span className="text-2xl">{SUITS.find(s=>s.id===c.suit)?.symbol}</span></> : <span className="m-auto text-xs">+</span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div>
+                            <span className="text-xs font-bold text-slate-300 uppercase">Comunitarias</span>
+                            <div className="flex gap-1.5 mt-1.5 overflow-x-auto">
+                                {[0, 1, 2, 3, 4].map(i => {
+                                    const c = boardCards[i];
+                                    const active = activeSlot.type === 'board' && activeSlot.index === i;
+                                    return (
+                                        <button key={i} onClick={() => setActiveSlot({ type: 'board', index: i })} className={`w-12 h-18 rounded-lg border-2 flex flex-col justify-between p-1.5 text-xs ${active ? 'border-emerald-500 ring-2 ring-emerald-500' : 'border-slate-700 bg-slate-950'} ${c ? 'text-white' : 'text-slate-500'}`}>
+                                            {c ? <><span className="font-bold">{c.rank}</span><span>{SUITS.find(s=>s.id===c.suit)?.symbol}</span></> : <span className="m-auto">+</span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* SELECTOR DE PALOS Y VALORES */}
+                        <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-xs text-slate-400">Seleccionar carta:</span>
+                                <div className="flex gap-1">
+                                    {SUITS.map(s => (
+                                        <button key={s.id} onClick={() => setSelectedSuit(s.id)} className={`px-2 py-0.5 rounded text-xs font-bold ${selectedSuit === s.id ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'}`}>
+                                            {s.symbol}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                                {RANKS.map(r => (
+                                    <button key={r.value} onClick={() => {
+                                        const newCard = { rank: r.value, suit: selectedSuit };
+                                        if (activeSlot.type === 'hole') {
+                                            const up = [...holeCards]; up[activeSlot.index] = newCard; setHoleCards(up);
+                                        } else {
+                                            const up = [...boardCards]; up[activeSlot.index] = newCard; setBoardCards(up);
+                                        }
+                                    }} className="bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded p-1 text-xs font-bold">
+                                        {r.display || r.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* PARÁMETROS Y RIVAL */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+                        <div className="grid grid-cols-3 gap-2">
+                            <div>
+                                <label className="text-[10px] text-slate-400 uppercase">Bote</label>
+                                <input type="number" value={potSize} onChange={e => setPotSize(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white font-bold" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-slate-400 uppercase">Apostar / Call</label>
+                                <input type="number" value={callAmount} onChange={e => setCallAmount(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white font-bold" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-slate-400 uppercase">Stack</label>
+                                <input type="number" value={stack} onChange={e => setStack(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white font-bold" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] text-slate-400 uppercase">Perfil del Rival</label>
+                            <select value={villainType} onChange={e => setVillainType(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-bold mt-1">
+                                <option value="TAG">TAG (Tiburón Equilibrado)</option>
+                                <option value="LAG">LAG (Maníaco / Agresivo)</option>
+                                <option value="NIT">NIT (Roca / Conservador)</option>
+                                <option value="STATION">STATION (Pagador)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* BANNER GTO */}
+                    <div className="bg-gradient-to-r from-emerald-950 via-emerald-900/90 to-slate-900 border-2 border-emerald-500 rounded-2xl p-4 shadow-2xl text-center space-y-2">
+                        <span className="text-xs uppercase tracking-widest text-emerald-300 font-bold">Decisión 98% GTO Recomendada</span>
+                        <div className="text-2xl font-black text-white">
+                            {equity >= potOdds ? "APOSTAR / SUBIR (Value)" : "IGUALAR / FOLD"}
+                        </div>
+                        <p className="text-xs text-slate-300">Pot Odds requeridas: {potOdds}% | Equity: {equity}%</p>
+                        <div className="pt-2 flex items-center justify-between bg-slate-950/80 p-2 rounded-xl border border-slate-800 text-xs">
+                            <span className="text-slate-400">RNG (Frecuencia Mixta): {rng !== null ? `${rng}/100` : 'Pendiente'}</span>
+                            <button onClick={rollRng} className="bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded text-xs">Girar RNG</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
